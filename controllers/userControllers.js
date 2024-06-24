@@ -1,14 +1,15 @@
 const userModel = require('../models/userModels')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
+const sendOtp = require('../service/sendOtp')
 //1. creating user function
 const createUser = async (req, res) => {
     //1. Get data drom the user(Fname,lname,email,password)
     console.log(req.body)
     //#.Destructuring
-    const { firstName, lastName, email, password } = req.body;
+    const { firstName, lastName, email, password, phone } = req.body;
     //2. validation 
-    if (!firstName || !lastName || !email || !password) {
+    if (!firstName || !lastName || !email || !password|| !phone) {
         return res.json({
             "Success": false,
             "message": "please enter all fields!"
@@ -36,7 +37,8 @@ const createUser = async (req, res) => {
             firstName: firstName,
             lastName: lastName,
             email: email,
-            password: hashPassword
+            password: hashPassword,
+            phone:phone
         })
 
         //Actually save the user database
@@ -121,12 +123,69 @@ const loginUser = async (req, res) => {
     }
 }
 
+//forgot password using phone number 
+const forgotPassword= async(req,res)=>{
+    const {phone} =req.body;
+    if (!phone){
+        res.status(400).json({
+            "success":false,
+            "message":"please provide phone number!"
+        })
+    }
+    try{
+
+        //user find and validate
+        const user =await userModel.findOne({phone: phone})
+        if (!user){
+            return res.status(400).json({
+                "success":false,
+                "message":"user not found!"
+
+                
+            })
+        }
+
+        //generate random otp
+        const otp =Math.floor(100000+ Math.random()*900000) ///6 digit otp
+
+        //update in database for verification
+        user.otpReset =otp;
+        user.otpResetExpires= Date.now()+3600000;
+        await user.save()
+
+        // Send OTP to phone number
+        const otpSent = await sendOtp(phone, otp);
+        if(otpSent) {
+            // return res.status(201).json({
+            //     success: true,
+            //     message: 'OTP has been sent'.
+            // })
+            return res.status(201).json({
+                success: true,
+                message: 'OTP has been sent.'
+            })
+        } else {
+            return res.status(400).json({
+                "success":false,
+                "message":"OTP was not sent."
+            })
+        }
+    }catch (error) {
+        console.log(error)
+        res.status(500).json({
+            "success":false,
+            "message":"server Error!"
+        })
+    }
+}
+
 
 
 //exporting
 module.exports = {
     createUser,
     loginUser,
+    forgotPassword
 }
 
 //task

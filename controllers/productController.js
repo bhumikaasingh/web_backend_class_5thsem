@@ -200,10 +200,49 @@ const updateProduct = async (req, res) => {
 
 }
 
+//pagination 
+const productPagination=async(req,res)=>{
+    // result per page 
+    const resultPerPage=2;
+
+    //page no (received form user)
+    const pageNo =req.query.page;
+
+    try{
+        const products=await productModel.find({})
+        .skip((pageNo-1)*resultPerPage)
+        .limit(resultPerPage)
+
+        //there is no product 
+        if(products.length===0){
+            return res.status(400).json({
+                "success":false,
+                "message":" No Product Found!"
+            })
+        }
+        res.status(201).json({
+            "success":true,
+            "message":" Product Found!",
+            'products':products
+        })
+        
+
+    }catch (error){
+        console.log(error)
+        res.status(500).json({
+            "success":false,
+            "message":"Server Error"
+            
+        })
+
+    }
+}
+
 module.exports = {
     createProduct,
     gteAllProducts,
     getProduct,
     deleteProduct,
-    updateProduct
+    updateProduct,
+    productPagination
 }
