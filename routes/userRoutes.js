@@ -6,7 +6,8 @@ router.post('/create',userControllers.createUser)
 //login user api
 router.post('/login',userControllers.loginUser)
 
-
+// Forgot password
+router.post('/forgot-password', userControllers.forgotPassword)
 //controllers-Routes-Index.js(yesari connect hunxa file haru)
 
 //exporting
